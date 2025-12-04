@@ -29,10 +29,10 @@ export default function EmployeeMyLeaves() {
     }
   };
 
-  const filterByDate = async () =>  
-  {
+  const filterByDate = async () => {
     if (!date) {
       setFilteredLeaves(leaves);
+      setCurrentPage(1);
       return;
     }
 
@@ -53,11 +53,12 @@ export default function EmployeeMyLeaves() {
   const statusColor = (status) => {
     switch (status) {
       case "approved":
-        return "bg-green-100 text-green-700 border-green-300";
+        return "bg-green-200 text-green-900";
       case "rejected":
-        return "bg-red-100 text-red-700 border-red-300";
+        return "bg-red-200 text-red-900";
       default:
-        return "bg-yellow-100 text-yellow-700 border-yellow-300";
+        // pending
+        return "bg-yellow-200 text-yellow-900";
     }
   };
 
@@ -74,65 +75,102 @@ export default function EmployeeMyLeaves() {
 
   return (
     <EmployeeLayout>
-      <h1 className="text-2xl font-bold mb-6">My Leaves</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">My Leaves</h1>
+      </div>
 
       {/* Filter */}
-      <div className="flex items-center gap-4 mb-6">
-        <input
-          type="date"
-          className="border p-2 rounded"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+      <div className="flex flex-wrap items-center gap-3 mb-6 bg-white p-4 shadow-sm rounded-xl border border-gray-100">
+        <div className="flex flex-col">
+          <label className="text-xs font-medium text-gray-500 mb-1">
+            Filter by Date
+          </label>
+          <input
+            type="date"
+            className="border px-3 py-2 rounded-md text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </div>
 
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-          onClick={filterByDate}
-        >
-          Filter
-        </button>
+        <div className="flex gap-2 mt-2 sm:mt-6">
+          <button
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 transition text-white rounded-md shadow text-sm"
+            onClick={filterByDate}
+          >
+            Filter
+          </button>
 
-        <button
-          className="px-4 py-2 bg-gray-500 text-white rounded"
-          onClick={() => {
-            setDate("");
-            setFilteredLeaves(leaves);
-          }}
-        >
-          Reset
-        </button>
+          <button
+            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 transition text-white rounded-md shadow text-sm"
+            onClick={() => {
+              setDate("");
+              setFilteredLeaves(leaves);
+              setCurrentPage(1);
+            }}
+          >
+            Reset
+          </button>
+        </div>
       </div>
 
       {/* Pending Table */}
-      <h2 className="text-xl font-semibold my-4">Pending Leaves</h2>
-      <div className="bg-white p-6 shadow rounded overflow-auto mb-10">
+      <h2 className="text-xl font-semibold my-4 text-gray-800">
+        Pending Leaves
+      </h2>
+      <div className="bg-white p-6 shadow-sm rounded-xl border border-gray-100 overflow-auto mb-10">
         {loading ? (
-          <p>Loading...</p>
+          <p className="text-center text-gray-500 py-4 text-sm">
+            Loading...
+          </p>
         ) : pending.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No pending records.</p>
+          <p className="text-gray-500 text-center py-4 text-sm">
+            No pending records.
+          </p>
         ) : (
           <>
-            <table className="w-full border-collapse min-w-[800px]">
+            <table className="w-full min-w-[900px] border-collapse text-sm">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="p-2 border">Leave Type</th>
-                  <th className="p-2 border">From</th>
-                  <th className="p-2 border">To</th>
-                  <th className="p-2 border">Reason</th>
-                  <th className="p-2 border">Status</th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Leave Type
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    From
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    To
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Reason
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Status
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
                 {paginate(pending).map((leave) => (
-                  <tr key={leave.id} className="border">
-                    <td className="p-2 border">{leave.leave_type}</td>
-                    <td className="p-2 border">{formatDate(leave.start_date)}</td>
-                    <td className="p-2 border">{formatDate(leave.end_date)}</td>
-                    <td className="p-2 border">{leave.reason}</td>
-                    <td className="p-2 border">
+                  <tr
+                    key={leave.id}
+                    className="border hover:bg-gray-50 transition"
+                  >
+                    <td className="p-3 border text-gray-700">
+                      {leave.leave_type}
+                    </td>
+                    <td className="p-3 border text-gray-700">
+                      {formatDate(leave.start_date)}
+                    </td>
+                    <td className="p-3 border text-gray-700">
+                      {formatDate(leave.end_date)}
+                    </td>
+                    <td className="p-3 border text-gray-700">
+                      {leave.reason}
+                    </td>
+                    <td className="p-3 border">
                       <span
-                        className={`px-3 py-1 rounded border text-sm font-medium ${statusColor(
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${statusColor(
                           leave.status
                         )}`}
                       >
@@ -148,7 +186,7 @@ export default function EmployeeMyLeaves() {
             <div className="flex justify-center mt-4 gap-4">
               <button
                 disabled={currentPage === 1}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 transition rounded shadow disabled:opacity-50 text-sm"
                 onClick={() => setCurrentPage((p) => p - 1)}
               >
                 Prev
@@ -156,7 +194,7 @@ export default function EmployeeMyLeaves() {
 
               <button
                 disabled={currentPage * pageSize >= pending.length}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 transition rounded shadow disabled:opacity-50 text-sm"
                 onClick={() => setCurrentPage((p) => p + 1)}
               >
                 Next
@@ -167,35 +205,62 @@ export default function EmployeeMyLeaves() {
       </div>
 
       {/* Approved Table */}
-      <h2 className="text-xl font-semibold my-4">Approved Leaves</h2>
-      <div className="bg-white p-6 shadow rounded overflow-auto mb-10">
+      <h2 className="text-xl font-semibold my-4 text-gray-800">
+        Approved Leaves
+      </h2>
+      <div className="bg-white p-6 shadow-sm rounded-xl border border-gray-100 overflow-auto mb-10">
         {approved.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No approved records.</p>
+          <p className="text-gray-500 text-center py-4 text-sm">
+            No approved records.
+          </p>
         ) : (
           <>
-            <table className="w-full border-collapse min-w-[800px]">
+            <table className="w-full min-w-[900px] border-collapse text-sm">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="p-2 border">Leave Type</th>
-                  <th className="p-2 border">From</th>
-                  <th className="p-2 border">To</th>
-                  <th className="p-2 border">Reason</th>
-                  <th className="p-2 border">Status</th>
-                  <th className="p-2 border">Remark</th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Leave Type
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    From
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    To
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Reason
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Status
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Remark
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
                 {paginate(approved).map((leave) => (
-                  <tr key={leave.id}>
-                    <td className="p-2 border">{leave.leave_type}</td>
-                    <td className="p-2 border">{formatDate(leave.start_date)}</td>
-                    <td className="p-2 border">{formatDate(leave.end_date)}</td>
-                    <td className="p-2 border">{leave.reason}</td>
+                  <tr
+                    key={leave.id}
+                    className="border hover:bg-gray-50 transition"
+                  >
+                    <td className="p-3 border text-gray-700">
+                      {leave.leave_type}
+                    </td>
+                    <td className="p-3 border text-gray-700">
+                      {formatDate(leave.start_date)}
+                    </td>
+                    <td className="p-3 border text-gray-700">
+                      {formatDate(leave.end_date)}
+                    </td>
+                    <td className="p-3 border text-gray-700">
+                      {leave.reason}
+                    </td>
 
-                    <td className="p-2 border">
+                    <td className="p-3 border">
                       <span
-                        className={`px-3 py-1 rounded border text-sm font-medium ${statusColor(
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${statusColor(
                           leave.status
                         )}`}
                       >
@@ -203,7 +268,7 @@ export default function EmployeeMyLeaves() {
                       </span>
                     </td>
 
-                    <td className="p-2 border text-sm">
+                    <td className="p-3 border text-sm text-gray-700">
                       {leave.remark ?? "No remark"}
                     </td>
                   </tr>
@@ -215,7 +280,7 @@ export default function EmployeeMyLeaves() {
             <div className="flex justify-center mt-4 gap-4">
               <button
                 disabled={currentPage === 1}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 transition rounded shadow disabled:opacity-50 text-sm"
                 onClick={() => setCurrentPage((p) => p - 1)}
               >
                 Prev
@@ -223,7 +288,7 @@ export default function EmployeeMyLeaves() {
 
               <button
                 disabled={currentPage * pageSize >= approved.length}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 transition rounded shadow disabled:opacity-50 text-sm"
                 onClick={() => setCurrentPage((p) => p + 1)}
               >
                 Next
@@ -234,35 +299,62 @@ export default function EmployeeMyLeaves() {
       </div>
 
       {/* Rejected Table */}
-      <h2 className="text-xl font-semibold my-4">Rejected Leaves</h2>
-      <div className="bg-white p-6 shadow rounded overflow-auto mb-10">
+      <h2 className="text-xl font-semibold my-4 text-gray-800">
+        Rejected Leaves
+      </h2>
+      <div className="bg-white p-6 shadow-sm rounded-xl border border-gray-100 overflow-auto mb-10">
         {rejected.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No rejected records.</p>
+          <p className="text-gray-500 text-center py-4 text-sm">
+            No rejected records.
+          </p>
         ) : (
           <>
-            <table className="w-full border-collapse min-w-[800px]">
+            <table className="w-full min-w-[900px] border-collapse text-sm">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="p-2 border">Leave Type</th>
-                  <th className="p-2 border">From</th>
-                  <th className="p-2 border">To</th>
-                  <th className="p-2 border">Reason</th>
-                  <th className="p-2 border">Status</th>
-                  <th className="p-2 border">Remark</th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Leave Type
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    From
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    To
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Reason
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Status
+                  </th>
+                  <th className="p-3 border bg-gray-100 font-semibold text-gray-700 text-left">
+                    Remark
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
                 {paginate(rejected).map((leave) => (
-                  <tr key={leave.id}>
-                    <td className="p-2 border">{leave.leave_type}</td>
-                    <td className="p-2 border">{formatDate(leave.start_date)}</td>
-                    <td className="p-2 border">{formatDate(leave.end_date)}</td>
-                    <td className="p-2 border">{leave.reason}</td>
+                  <tr
+                    key={leave.id}
+                    className="border hover:bg-gray-50 transition"
+                  >
+                    <td className="p-3 border text-gray-700">
+                      {leave.leave_type}
+                    </td>
+                    <td className="p-3 border text-gray-700">
+                      {formatDate(leave.start_date)}
+                    </td>
+                    <td className="p-3 border text-gray-700">
+                      {formatDate(leave.end_date)}
+                    </td>
+                    <td className="p-3 border text-gray-700">
+                      {leave.reason}
+                    </td>
 
-                    <td className="p-2 border">
+                    <td className="p-3 border">
                       <span
-                        className={`px-3 py-1 rounded border text-sm font-medium ${statusColor(
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${statusColor(
                           leave.status
                         )}`}
                       >
@@ -270,7 +362,7 @@ export default function EmployeeMyLeaves() {
                       </span>
                     </td>
 
-                    <td className="p-2 border text-sm">
+                    <td className="p-3 border text-sm text-gray-700">
                       {leave.remark ?? "No remark"}
                     </td>
                   </tr>
@@ -282,7 +374,7 @@ export default function EmployeeMyLeaves() {
             <div className="flex justify-center mt-4 gap-4">
               <button
                 disabled={currentPage === 1}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 transition rounded shadow disabled:opacity-50 text-sm"
                 onClick={() => setCurrentPage((p) => p - 1)}
               >
                 Prev
@@ -290,7 +382,7 @@ export default function EmployeeMyLeaves() {
 
               <button
                 disabled={currentPage * pageSize >= rejected.length}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 transition rounded shadow disabled:opacity-50 text-sm"
                 onClick={() => setCurrentPage((p) => p + 1)}
               >
                 Next

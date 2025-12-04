@@ -6,6 +6,7 @@ import Signup from "./pages/Signup";
 
 // Admin dashboard (existing)
 import Dashboard from "./pages/Dashboard";
+import EmployeeProfileTabs from "./employee/EmployeeProfileTabs";
 
 // New dashboards
 import EmployeeDashboard from "./employee/EmployeeDashboard";
@@ -47,8 +48,18 @@ import AdminLeaveApproval from "./pages/AdminLeaveApproval";
 import AttendanceReport from "./pages/AttendanceReport";
 import AttendanceList from "./pages/AttendanceList";
 
+
+
 // Organization Settings
 import OrganizationSettings from "./pages/OrganizationSettings";
+
+
+import EmployeeWorkAnalytics from "./employee/EmployeeWorkAnalytics";
+
+
+
+
+
 
 // Layout
 import Layout from "./components/Layout";
@@ -159,6 +170,15 @@ function App() {
             }
           />
 
+                /* Employee Profile Tabs */
+                <Route
+                  path="/employee/profile/:tab"
+                  element={
+                    <ProtectedRoute allowedRoles={["employee"]}>
+                      <EmployeeProfileTabs />
+                    </ProtectedRoute>
+                  }
+                />
 
 
 
@@ -327,7 +347,7 @@ function App() {
           }
         />
 
-
+      <Route path="/employee/work-analytics" element={<EmployeeWorkAnalytics />} />
 
 
         {/* Unauthorized */}

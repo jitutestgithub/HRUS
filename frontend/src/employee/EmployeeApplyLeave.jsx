@@ -25,21 +25,21 @@ export default function EmployeeApplyLeave() {
     setMsg("");
 
     try {
-      const res = await api.post("/leaves/apply", {
+      await api.post("/leaves/apply", {
         leave_type: leaveType,
         from_date: fromDate,
         to_date: toDate,
         reason,
       });
 
-      setMsg("Leave request submitted successfully!");
+      setMsg("success");
       setLeaveType("");
       setFromDate("");
       setToDate("");
       setReason("");
     } catch (err) {
-      console.log(err);
-      setMsg("Failed to submit leave request.");
+      console.error(err);
+      setMsg("error");
     } finally {
       setLoading(false);
     }
@@ -47,27 +47,35 @@ export default function EmployeeApplyLeave() {
 
   return (
     <EmployeeLayout>
-      <h1 className="text-2xl font-bold mb-6">Apply for Leave</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">Apply for Leave</h1>
 
+      {/* Message */}
       {msg && (
-        <p
-          className={`p-3 mb-4 text-white rounded ${
-            msg.includes("success")
-              ? "bg-green-600"
-              : "bg-red-600"
+        <div
+          className={`p-4 mb-5 rounded-md text-sm font-medium shadow-sm ${
+            msg === "success"
+              ? "bg-green-100 text-green-800 border border-green-300"
+              : "bg-red-100 text-red-800 border border-red-300"
           }`}
         >
-          {msg}
-        </p>
+          {msg === "success"
+            ? "Leave request submitted successfully!"
+            : "Failed to submit leave request."}
+        </div>
       )}
 
-      <form onSubmit={submitLeave} className="bg-white p-6 shadow rounded w-full max-w-xl">
-
+      {/* Form Card */}
+      <form
+        onSubmit={submitLeave}
+        className="bg-white p-6 shadow-md rounded-xl border border-gray-100 w-full max-w-xl"
+      >
         {/* Leave Type */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Leave Type</label>
+        <div className="mb-5">
+          <label className="block mb-1 text-sm font-semibold text-gray-700">
+            Leave Type
+          </label>
           <select
-            className="w-full border p-2 rounded"
+            className="w-full border px-3 py-2 rounded-md text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none transition"
             value={leaveType}
             onChange={(e) => setLeaveType(e.target.value)}
             required
@@ -82,11 +90,13 @@ export default function EmployeeApplyLeave() {
         </div>
 
         {/* From Date */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">From Date</label>
+        <div className="mb-5">
+          <label className="block mb-1 text-sm font-semibold text-gray-700">
+            From Date
+          </label>
           <input
             type="date"
-            className="w-full border p-2 rounded"
+            className="w-full border px-3 py-2 rounded-md text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none transition"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
             required
@@ -94,11 +104,13 @@ export default function EmployeeApplyLeave() {
         </div>
 
         {/* To Date */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">To Date</label>
+        <div className="mb-5">
+          <label className="block mb-1 text-sm font-semibold text-gray-700">
+            To Date
+          </label>
           <input
             type="date"
-            className="w-full border p-2 rounded"
+            className="w-full border px-3 py-2 rounded-md text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none transition"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
             required
@@ -106,10 +118,12 @@ export default function EmployeeApplyLeave() {
         </div>
 
         {/* Reason */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Reason</label>
+        <div className="mb-5">
+          <label className="block mb-1 text-sm font-semibold text-gray-700">
+            Reason
+          </label>
           <textarea
-            className="w-full border p-2 rounded h-24"
+            className="w-full border px-3 py-2 rounded-md text-sm h-28 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none transition"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Write the reason for your leave..."
@@ -121,7 +135,7 @@ export default function EmployeeApplyLeave() {
         <button
           type="submit"
           disabled={loading}
-          className="px-5 py-2 bg-blue-600 text-white rounded w-full"
+          className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-sm shadow-md transition disabled:opacity-50"
         >
           {loading ? "Submitting..." : "Submit Leave Request"}
         </button>

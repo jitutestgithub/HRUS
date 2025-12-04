@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
 import api from "../api";
 import EmployeeLayout from "./EmployeeLayout";
+import {
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  Calendar,
+  Edit3,
+  Lock,
+  Camera,
+} from "lucide-react";
 
 export default function EmployeeProfile() {
   const [loading, setLoading] = useState(true);
@@ -31,38 +41,58 @@ export default function EmployeeProfile() {
     }
   };
 
+  // Upload Photo
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("photo", file);
+
+    try {
+      const res = await api.post("/employee/upload-photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      setProfile((p) => ({ ...p, photo: res.data.photo }));
+
+      setMsg("success: Profile photo updated!");
+
+    } catch (err) {
+      setMsg("error: Failed to upload photo");
+    }
+  };
+
+  // Update Profile
   const updateProfile = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.put("/employee/update", form);
-      setMsg("Profile updated successfully!");
+      await api.put("/employee/update", form);
+      setMsg("success: Profile updated successfully!");
       setEditMode(false);
       loadProfile();
     } catch (err) {
       console.error(err);
-      setMsg("Failed to update profile.");
+      setMsg("error: Failed to update profile.");
     }
   };
 
+  // Update Password
   const updatePassword = async (e) => {
     e.preventDefault();
     if (passwords.newPass !== passwords.confirm) {
-      setMsg("New passwords do not match.");
+      setMsg("error: New passwords do not match.");
       return;
     }
 
     try {
-      const res = await api.put("/employee/change-password", passwords);
-      setMsg("Password updated successfully!");
+      await api.put("/employee/change-password", passwords);
+      setMsg("success: Password updated successfully!");
       setChangePass(false);
-      setPasswords({
-        current: "",
-        newPass: "",
-        confirm: "",
-      });
+      setPasswords({ current: "", newPass: "", confirm: "" });
     } catch (err) {
       console.log(err);
-      setMsg("Password update failed.");
+      setMsg("error: Password update failed.");
     }
   };
 
@@ -77,49 +107,68 @@ export default function EmployeeProfile() {
     <EmployeeLayout>
       <h1 className="text-2xl font-bold mb-6">My Profile</h1>
 
+      {/* ALERT */}
       {msg && (
         <div
-          className={`p-3 mb-4 rounded text-white ${
-            msg.includes("success") ? "bg-green-600" : "bg-red-600"
+          className={`p-3 mb-4 rounded text-white shadow ${
+            msg.startsWith("success") ? "bg-green-600" : "bg-red-600"
           }`}
         >
-          {msg}
+          {msg.replace("success: ", "").replace("error: ", "")}
         </div>
       )}
 
       {/* PROFILE CARD */}
-      <div className="bg-white p-6 shadow rounded mb-8">
+      <div className="bg-white p-6 shadow rounded-xl mb-8 border border-gray-100">
 
-        {/* PHOTO + NAME */}
-        <div className="flex items-center gap-6 mb-6">
-          <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xl">
-            {profile?.first_name?.charAt(0)}
+        {/* PHOTO + HEADER */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="relative">
+            <img
+              src={profile.photo ? profile.photo : "/default-user.png"}
+              alt="Profile"
+              className="w-32 h-32 rounded-full object-cover border shadow-lg"
+            />
+
+
+            {/* Upload Button */}
+            <label className="absolute bottom-1 right-1 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 shadow">
+              <Camera size={16} />
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handlePhotoUpload}
+              />
+            </label>
           </div>
 
-          <div>
-            <h2 className="text-xl font-semibold">
-              {profile.first_name} {profile.last_name}
-            </h2>
-            <p className="text-gray-500">{profile.email}</p>
-            <p className="text-gray-500">Employee Code: {profile.employee_code}</p>
-          </div>
+          <h2 className="text-xl font-semibold mt-4 flex items-center gap-2">
+            <User size={20} /> {profile.first_name} {profile.last_name}
+          </h2>
+
+          <p className="text-gray-500 text-sm">
+            Employee Code: <b>{profile.employee_code}</b>
+          </p>
         </div>
 
-        {/* DETAILS */}
+        {/* VIEW MODE */}
         {!editMode && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Info label="Full Name" value={`${profile.first_name} ${profile.last_name}`} />
-            <Info label="Email" value={profile.email} />
-            <Info label="Phone" value={profile.phone || "--"} />
-            <Info label="Department" value={profile.department_name || "--"} />
-            <Info label="Designation" value={profile.designation || "--"} />
-            <Info label="Join Date" value={profile.join_date || "--"} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+            <Info icon={<User size={18} />} label="Full Name" value={`${profile.first_name} ${profile.last_name}`} />
+            <Info icon={<Mail size={18} />} label="Email" value={profile.email} />
+            <Info icon={<Phone size={18} />} label="Phone" value={profile.phone || "--"} />
+            <Info icon={<Briefcase size={18} />} label="Department" value={profile.department_name || "--"} />
+            <Info icon={<Briefcase size={18} />} label="Designation" value={profile.designation || "--"} />
+            <Info icon={<Calendar size={18} />} label="Join Date" value={profile.join_date || "--"} />
           </div>
         )}
 
-        {/* EDIT FORM */}
+        {/* EDIT MODE */}
         {editMode && (
           <form onSubmit={updateProfile} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
             <Input
               label="First Name"
               value={form.first_name}
@@ -144,13 +193,14 @@ export default function EmployeeProfile() {
               onChange={(e) => setForm({ ...form, designation: e.target.value })}
             />
 
-            <div className="col-span-2 mt-4">
-              <button className="px-4 py-2 bg-green-600 text-white rounded" type="submit">
+            {/* Save Buttons */}
+            <div className="col-span-2 mt-4 flex gap-3">
+              <button className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow">
                 Save Changes
               </button>
               <button
-                className="ml-3 px-4 py-2 bg-gray-400 text-white rounded"
                 type="button"
+                className="px-5 py-2 bg-gray-400 text-white rounded-lg shadow"
                 onClick={() => setEditMode(false)}
               >
                 Cancel
@@ -159,64 +209,60 @@ export default function EmployeeProfile() {
           </form>
         )}
 
-        {/* EDIT BUTTON */}
         {!editMode && (
           <button
-            className="mt-5 px-4 py-2 bg-blue-600 text-white rounded"
+            className="mt-6 flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow"
             onClick={() => setEditMode(true)}
           >
-            Edit Profile
+            <Edit3 size={18} /> Edit Profile
           </button>
         )}
       </div>
 
-      {/* CHANGE PASSWORD SECTION */}
-      <div className="bg-white p-6 shadow rounded">
-        <h2 className="text-xl font-semibold mb-4">Change Password</h2>
+      {/* PASSWORD SECTION */}
+      <div className="bg-white p-6 shadow rounded-xl border border-gray-100">
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Lock size={20} /> Change Password
+        </h2>
 
         {!changePass ? (
           <button
-            className="px-4 py-2 bg-blue-600 text-white rounded"
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow"
             onClick={() => setChangePass(true)}
           >
-            Change Password
+            Update Password
           </button>
         ) : (
           <form onSubmit={updatePassword} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
             <Input
               label="Current Password"
               type="password"
               value={passwords.current}
-              onChange={(e) =>
-                setPasswords({ ...passwords, current: e.target.value })
-              }
+              onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
             />
 
             <Input
               label="New Password"
               type="password"
               value={passwords.newPass}
-              onChange={(e) =>
-                setPasswords({ ...passwords, newPass: e.target.value })
-              }
+              onChange={(e) => setPasswords({ ...passwords, newPass: e.target.value })}
             />
 
             <Input
               label="Confirm New Password"
               type="password"
               value={passwords.confirm}
-              onChange={(e) =>
-                setPasswords({ ...passwords, confirm: e.target.value })
-              }
+              onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
             />
 
-            <div className="col-span-2 mt-4">
-              <button className="px-4 py-2 bg-green-600 text-white rounded" type="submit">
-                Update Password
+            <div className="col-span-2 mt-4 flex gap-3">
+              <button className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow">
+                Save Password
               </button>
               <button
-                className="ml-3 px-4 py-2 bg-gray-400 text-white rounded"
                 type="button"
+                className="px-5 py-2 bg-gray-400 text-white rounded-lg shadow"
                 onClick={() => setChangePass(false)}
               >
                 Cancel
@@ -229,11 +275,14 @@ export default function EmployeeProfile() {
   );
 }
 
-function Info({ label, value }) {
+/* REUSABLE COMPONENTS */
+function Info({ label, value, icon }) {
   return (
-    <div>
-      <p className="text-gray-500 text-sm">{label}</p>
-      <p className="font-medium">{value}</p>
+    <div className="flex flex-col p-3 border rounded-lg bg-gray-50 shadow-sm">
+      <div className="flex items-center gap-2 text-gray-600 text-sm">
+        {icon} {label}
+      </div>
+      <p className="font-semibold mt-1">{value}</p>
     </div>
   );
 }
@@ -242,7 +291,10 @@ function Input({ label, ...props }) {
   return (
     <div>
       <label className="block mb-1 font-medium">{label}</label>
-      <input className="w-full border p-2 rounded" {...props} />
+      <input
+        className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-green-400 outline-none"
+        {...props}
+      />
     </div>
   );
 }
