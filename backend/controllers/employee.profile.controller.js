@@ -20,7 +20,19 @@ exports.getMyProfile = async (req, res) => {
          e.department_id,
          d.name AS department_name,
          e.designation,
-         e.join_date
+         e.join_date,
+         e.photo,               -- ⭐ ADD THIS
+         e.gender,
+         e.dob,
+         e.marital_status,
+         e.blood_group,
+         e.address,
+         e.city,
+         e.state,
+         e.pincode,
+         e.emergency_name,
+         e.emergency_phone,
+         e.relationship
        FROM employees e
        LEFT JOIN departments d ON e.department_id = d.id
        WHERE e.user_id = ? AND e.organization_id = ?`,

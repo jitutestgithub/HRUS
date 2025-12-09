@@ -33,5 +33,6 @@ router.get("/date/:date", verifyToken, employeeAtt.getByDate);
 
 // 🔹 WORK ANALYTICS (New SaaS Feature)
 
+router.get("/my/analytics", verifyToken, employeeAtt.getWorkAnalytics);
 
 module.exports = router;

@@ -8,13 +8,12 @@ const {
 } = require("../config/attendanceConfig");
 
 const buildDateTime = (dateStr, timeStr) => {
-  // dateStr: '2025-02-01', timeStr: '10:00'
   return new Date(`${dateStr}T${timeStr}:00`);
 };
 
-exports.getMyAttendanceAnalytics = async (req, res) => {
+exports.getWorkAnalytics = async (req, res) => {
   try {
-    const employeeId = req.user.id; // token se aa raha h
+    const employeeId = req.user.employee_id; // Token se aa raha h
 
     // Current month range
     const now = new Date();
@@ -58,15 +57,13 @@ exports.getMyAttendanceAnalytics = async (req, res) => {
 
     for (const row of rows) {
       const dateStr = row.date.toISOString().split("T")[0];
-
       let workingHours = row.working_hours || 0;
 
-      // अगर working_hours column नहीं भरा तो runtime पर calculate:
+      // agar working_hours column nahi bhara to calculate realtime
       if (!workingHours && row.check_in && row.check_out) {
         const checkIn = new Date(row.check_in);
         const checkOut = new Date(row.check_out);
-        const diffMs = checkOut - checkIn;
-        workingHours = diffMs / (1000 * 60 * 60); // hours
+        workingHours = (checkOut - checkIn) / (1000 * 60 * 60);
       }
 
       // total hours
@@ -79,7 +76,7 @@ exports.getMyAttendanceAnalytics = async (req, res) => {
         overtimeHours += workingHours - NORMAL_WORK_HOURS_PER_DAY;
       }
 
-      // late arrival
+      // late arrival calculation
       if (row.check_in) {
         const checkIn = new Date(row.check_in);
         const shiftStart = buildDateTime(dateStr, SHIFT_START);
@@ -88,9 +85,7 @@ exports.getMyAttendanceAnalytics = async (req, res) => {
           shiftStart.getTime() + LATE_TOLERANCE_MINUTES * 60 * 1000
         );
 
-        if (checkIn > lateThreshold) {
-          lateArrivals += 1;
-        }
+        if (checkIn > lateThreshold) lateArrivals++;
       }
 
       // early checkout
@@ -102,35 +97,49 @@ exports.getMyAttendanceAnalytics = async (req, res) => {
           shiftEnd.getTime() - EARLY_TOLERANCE_MINUTES * 60 * 1000
         );
 
-        if (checkOut < earlyThreshold) {
-          earlyCheckouts += 1;
-        }
+        if (checkOut < earlyThreshold) earlyCheckouts++;
       }
 
-      // Streaks: status present / absent
+      // Streaks
       if (row.status === "present") {
-        currentPresentStreak += 1;
+        currentPresentStreak++;
         bestStreak = Math.max(bestStreak, currentPresentStreak);
-        // reset absent streak
         currentAbsentStreak = 0;
       } else if (row.status === "absent") {
-        currentAbsentStreak += 1;
+        currentAbsentStreak++;
         worstStreak = Math.max(worstStreak, currentAbsentStreak);
-        // reset present streak
         currentPresentStreak = 0;
       } else {
-        // Other status (leave, holiday etc) streak break ho jayega
         currentPresentStreak = 0;
         currentAbsentStreak = 0;
       }
 
-      // Daily hours list for chart
+      // daily hours add
       dailyHours.push({
         date: dateStr,
         hours: Number(workingHours.toFixed(2)),
       });
     }
 
+    // --- NEW METRICS ---
+
+    // Minimum hours
+    const minHours =
+      dailyHours.length > 0
+        ? Math.min(...dailyHours.map((d) => d.hours))
+        : 0;
+
+    // Maximum hours
+    const maxHours =
+      dailyHours.length > 0
+        ? Math.max(...dailyHours.map((d) => d.hours))
+        : 0;
+
+    // Average hours
+    const avgHours =
+      dailyHours.length > 0 ? totalHours / dailyHours.length : 0;
+
+    // FINAL RESPONSE
     res.json({
       total_hours: Number(totalHours.toFixed(2)),
       overtime_hours: Number(overtimeHours.toFixed(2)),
@@ -139,9 +148,14 @@ exports.getMyAttendanceAnalytics = async (req, res) => {
       best_streak: bestStreak,
       worst_streak: worstStreak,
       daily_hours: dailyHours,
+
+      // NEW
+      min_hours: Number(minHours.toFixed(2)),
+      max_hours: Number(maxHours.toFixed(2)),
+      avg_hours: Number(avgHours.toFixed(2)),
     });
   } catch (err) {
-    console.error("Error in getMyAttendanceAnalytics:", err);
+    console.error("Error in getWorkAnalytics:", err);
     res.status(500).json({ message: "Failed to fetch analytics" });
   }
 };

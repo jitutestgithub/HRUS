@@ -207,17 +207,13 @@ function Tab({ id, label, icon, activeTab, setActiveTab }) {
 
 /* ---------------- OVERVIEW TAB ---------------- */
 function OverviewTab({ profile, onPhotoUpload }) {
+console.log("Profile Photo URL:", profile);
   return (
     <>
       <div className="flex flex-col items-center mb-8">
         <div className="relative w-36 h-36">
           <img
-           src={
-  profile.photo
-    ? `${process.env.REACT_APP_API_URL}${profile.photo}`
-    : "/default-user.png"
-}
-
+           src={  profile.photo}
             alt="profile"
             className="w-36 h-36 rounded-full object-cover border shadow bg-gray-100"
             onError={(e) => {

@@ -1,7 +1,34 @@
-// src/components/EmployeeWorkAnalytics.jsx
 import React, { useEffect, useState } from "react";
 import api from "../api";
 import EmployeeLayout from "./EmployeeLayout";
+
+// Recharts Components
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+
+// Custom Tooltip
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-md text-sm">
+        <p className="font-semibold text-gray-800">{`Date: ${label}`}</p>
+        <p className="text-blue-600">{`Hours: ${payload[0].value}h`}</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function EmployeeWorkAnalytics() {
   const [loading, setLoading] = useState(true);
@@ -9,183 +36,202 @@ export default function EmployeeWorkAnalytics() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const load = async () => {
+    const loadAnalytics = async () => {
       try {
-        setLoading(true);
-        setError("");
         const res = await api.get("/attendance/my/analytics");
-        setAnalytics(res.data);
+        console.log("Backend Analytics:", res.data);
+
+        const backend = res.data;
+
+        // Convert backend fields → frontend fields
+        const finalAnalytics = {
+          total_hours: backend.total_work_minutes
+            ? (backend.total_work_minutes / 60).toFixed(1)
+            : 0,
+
+          overtime_hours: backend.overtime_minutes
+            ? (backend.overtime_minutes / 60).toFixed(1)
+            : 0,
+
+          late_arrivals: backend.late_arrivals ?? 0,
+          early_checkouts: backend.early_checkouts ?? 0,
+
+          best_streak: backend.best_streak ?? 0,
+          worst_streak: backend.worst_streak ?? 0,
+
+          daily_hours: Array.isArray(backend.daily_data)
+            ? backend.daily_data.map((d) => ({
+                date: d.date,
+                hours: (d.minutes / 60).toFixed(1),
+              }))
+            : [],
+        };
+
+        setAnalytics(finalAnalytics);
       } catch (err) {
         console.error(err);
-        setError("Failed to load analytics.");
+        setError("⚠️ Unable to fetch analytics. Unauthorized or server error.");
       } finally {
         setLoading(false);
       }
     };
 
-    load();
+    loadAnalytics();
   }, []);
-
-  const getMaxHours = () => {
-    if (!analytics || !analytics.daily_hours.length) return 0;
-    return Math.max(...analytics.daily_hours.map((d) => d.hours), 8);
-  };
-
-  const maxHours = getMaxHours();
 
   return (
     <EmployeeLayout>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Work Hours Analytics
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Overview of your working hours, overtime, and attendance streaks
-            (current month).
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* PAGE TITLE */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-extrabold text-gray-900">🚀 My Work Analytics</h1>
+          <p className="text-gray-500 mt-2">
+            Monthly summary of your work performance.
           </p>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">Loading analytics...</p>
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md mb-4 text-sm">
-          {error}
-        </div>
-      ) : !analytics ? (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500">No data available.</p>
-        </div>
-      ) : (
-        <>
-          {/* Top Metric Cards */}
-          <div className="grid gap-4 mb-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Total Hours */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Total Working Hours
-              </p>
-              <p className="mt-2 text-2xl font-bold text-gray-800">
-                {analytics.total_hours}h
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Sum of all recorded working hours this month
-              </p>
-            </div>
-
-            {/* Overtime */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Overtime Hours
-              </p>
-              <p className="mt-2 text-2xl font-bold text-blue-600">
-                {analytics.overtime_hours}h
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Extra hours worked beyond 8h / day
-              </p>
-            </div>
-
-            {/* Late Arrivals */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Late Arrivals
-              </p>
-              <p className="mt-2 text-2xl font-bold text-red-600">
-                {analytics.late_arrivals}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Number of days you checked in late
-              </p>
-            </div>
-
-            {/* Early Checkouts */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Early Checkouts
-              </p>
-              <p className="mt-2 text-2xl font-bold text-orange-500">
-                {analytics.early_checkouts}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Days you left before shift end
-              </p>
-            </div>
+        {/* LOADING */}
+        {loading && (
+          <div className="text-center py-10">
+            <p className="text-lg text-blue-600">Loading analytics...</p>
           </div>
+        )}
 
-          {/* Streaks */}
-          <div className="grid gap-4 mb-6 grid-cols-1 sm:grid-cols-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Best Attendance Streak
-              </p>
-              <p className="mt-2 text-2xl font-bold text-green-600">
-                {analytics.best_streak} days
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Your longest continuous present days
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Worst Absent Streak
-              </p>
-              <p className="mt-2 text-2xl font-bold text-red-500">
-                {analytics.worst_streak} days
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Longest continuous absent days
-              </p>
-            </div>
+        {/* ERROR */}
+        {!loading && error && (
+          <div className="text-center py-10 bg-red-50 border border-red-300 rounded-xl">
+            <p className="text-red-600 font-medium">{error}</p>
           </div>
+        )}
 
-          {/* Daily Hours Bar Chart */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Daily Work Hours (This Month)
-              </h2>
-              <p className="text-xs text-gray-500">
-                Bar size is relative to max hours in this month.
-              </p>
-            </div>
-
-            {analytics.daily_hours.length === 0 ? (
-              <p className="text-sm text-gray-500">No attendance recorded.</p>
-            ) : (
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {analytics.daily_hours.map((day) => {
-                  const percent = maxHours
-                    ? Math.min((day.hours / maxHours) * 100, 100)
-                    : 0;
-                  return (
-                    <div key={day.date} className="flex items-center gap-3">
-                      <div className="w-20 text-xs text-gray-500">
-                        {day.date}
-                      </div>
-                      <div className="flex-1">
-                        <div className="h-3 rounded-full bg-gray-100 overflow-hidden">
-                          <div
-                            className="h-3 rounded-full bg-blue-500 transition-all"
-                            style={{ width: `${percent}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      <div className="w-12 text-xs text-right text-gray-700">
-                        {day.hours}h
-                      </div>
-                    </div>
-                  );
-                })}
+        {/* DATA LOADED */}
+        {!loading && !error && analytics && (
+          <>
+            {/* METRIC CARDS */}
+            <div className="grid gap-6 mb-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              
+              {/* Total Hours */}
+              <div className="bg-white rounded-2xl p-6 border shadow">
+                <p className="text-sm text-gray-500 uppercase">Total Hours</p>
+                <p className="text-4xl font-bold mt-1">
+                  {analytics.total_hours}
+                  <span className="text-xl ml-1 text-gray-500">h</span>
+                </p>
+                <div className="w-full h-20 mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={[{ val: analytics.total_hours }]}>
+                      <Line dataKey="val" stroke="#10b981" strokeWidth={3} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-            )}
-          </div>
-        </>
-      )}
+
+              {/* Overtime */}
+              <div className="bg-white rounded-2xl p-6 border shadow">
+                <p className="text-sm text-gray-500 uppercase">Overtime</p>
+                <p className="text-4xl font-bold mt-1 text-blue-600">
+                  {analytics.overtime_hours}
+                  <span className="text-xl ml-1 text-blue-400">h</span>
+                </p>
+                <div className="w-full h-20 mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={[{ val: analytics.overtime_hours }]}>
+                      <Bar dataKey="val" fill="#3b82f6" radius={[5, 5, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Late Arrivals */}
+              <div className="bg-white rounded-2xl p-6 border shadow">
+                <p className="text-sm text-gray-500 uppercase">Late Arrivals</p>
+                <p className="text-4xl font-bold mt-1 text-red-600">
+                  {analytics.late_arrivals}
+                </p>
+                <div className="w-full h-20 mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={[{ val: analytics.late_arrivals }]}>
+                      <Bar dataKey="val" fill="#ef4444" radius={[5, 5, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Early Checkouts */}
+              <div className="bg-white rounded-2xl p-6 border shadow">
+                <p className="text-sm text-gray-500 uppercase">Early Checkouts</p>
+                <p className="text-4xl font-bold mt-1 text-orange-500">
+                  {analytics.early_checkouts}
+                </p>
+                <div className="w-full h-20 mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={[{ val: analytics.early_checkouts }]}>
+                      <Bar dataKey="val" fill="#f97316" radius={[5, 5, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* STREAK CARDS */}
+            <div className="grid gap-6 mb-8 grid-cols-1 sm:grid-cols-2">
+
+              {/* Best Streak */}
+              <div className="bg-white rounded-2xl p-6 border shadow flex items-center">
+                <div className="bg-green-100 text-green-600 p-3 rounded-full">🏆</div>
+                <div className="ml-4 flex-grow">
+                  <p className="text-sm text-gray-500 uppercase">Best Streak</p>
+                  <p className="text-3xl font-bold text-green-600 mt-1">
+                    {analytics.best_streak} days
+                  </p>
+                </div>
+              </div>
+
+              {/* Worst Streak */}
+              <div className="bg-white rounded-2xl p-6 border shadow flex items-center">
+                <div className="bg-red-100 text-red-600 p-3 rounded-full">⚠️</div>
+                <div className="ml-4 flex-grow">
+                  <p className="text-sm text-gray-500 uppercase">Worst Streak</p>
+                  <p className="text-3xl font-bold text-red-600 mt-1">
+                    {analytics.worst_streak} days
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* DAILY TREND CHART */}
+            <div className="bg-white rounded-2xl p-6 border shadow mb-10">
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">
+                Daily Work Hours Trend
+              </h2>
+
+              {analytics.daily_hours.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  No daily work hours available.
+                </div>
+              ) : (
+                <div className="w-full h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analytics.daily_hours} barSize={14}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                      <XAxis
+                        dataKey="date"
+                        stroke="#6b7280"
+                        angle={-15}
+                        textAnchor="end"
+                        height={45}
+                      />
+                      <YAxis stroke="#6b7280" />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="hours" fill="#1d4ed8" radius={[5, 5, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </EmployeeLayout>
   );
 }

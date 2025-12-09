@@ -428,4 +428,33 @@ exports.getByDate = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
- //attendence.employee.controllor.js
+exports.getWorkAnalytics = async (req, res) => {
+  try {
+    const employeeId = req.user.employee_id;
+
+    const [rows] = await pool.query(
+      `SELECT 
+         COUNT(*) AS total_days,
+
+         -- Work minutes
+         SUM(TIMESTAMPDIFF(MINUTE, a.check_in, a.check_out)) AS total_work_minutes,
+
+         -- Break minutes
+         (
+           SELECT 
+             IFNULL(SUM(TIMESTAMPDIFF(MINUTE, break_start, break_end)), 0)
+           FROM attendance_breaks 
+           WHERE employee_id = ? 
+         ) AS total_break_minutes
+
+       FROM attendance_records a
+       WHERE a.employee_id = ?`,
+      [employeeId, employeeId]
+    );
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("getWorkAnalytics:", err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
