@@ -1,0 +1,15 @@
+# zip files
+*.zip
+
+# node
+node_modules/
+
+# env
+.env
+
+# uploads
+backend/uploads/
+hrmsjitendra/backend/uploads/
+
+# logs
+*.log
